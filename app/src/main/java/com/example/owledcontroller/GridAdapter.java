@@ -8,16 +8,18 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
 public class GridAdapter extends BaseAdapter {
 
     Context context;
-    String[] flowerName;
+    ArrayList<String> flowerName;
     int[] image;
 
     LayoutInflater inflater;
 
     // Конструктор класса GridAdapter
-    public GridAdapter(Context context, String[] flowerName, int[] image) {
+    public GridAdapter(Context context, ArrayList<String> flowerName, int[] image) {
         this.context = context;
         this.flowerName = flowerName;
         this.image = image;
@@ -26,7 +28,7 @@ public class GridAdapter extends BaseAdapter {
     @Override
     public int getCount() {
         // Возвращает общее количество элементов в адаптере
-        return flowerName.length;
+        return flowerName.size();
     }
 
     @Override
@@ -57,7 +59,7 @@ public class GridAdapter extends BaseAdapter {
 
         // Устанавливаем изображение и текст для текущего элемента
         imageView.setImageResource(image[i]);
-        textView.setText(flowerName[i]);
+        textView.setText(flowerName.get(i));
 
         // Возвращаем View, представляющую текущий элемент в GridView
         return view;
