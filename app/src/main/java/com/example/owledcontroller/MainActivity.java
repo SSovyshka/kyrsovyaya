@@ -40,10 +40,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String SERVER_IP = "192.168.0.78";
     private static final int SERVER_PORT = 61024;
 
-    private static MongoClient mongoClient;
-    private static DB dataBase;
-    private static DBCollection dataBaseCollection;
-
     private ArrayList<Effect> effects;
 
     private class NetworkTask extends AsyncTask<JSONObject, Void, Void> {
@@ -62,10 +58,70 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static ArrayList<Effect> getEffects() throws IOException {
+    private class FetchEffectsTask extends AsyncTask<Void, Void, ArrayList<Effect>> {
+        @Override
+        protected ArrayList<Effect> doInBackground(Void... voids) {
+            try {
+                return getEffects();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        public ArrayList<String> getEffectFunction() {
+            ArrayList<String> images = new ArrayList<>();
+            effects.forEach(e -> {
+                images.add(e.getGif());
+            });
+            return images;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<Effect> result) {
+            if (result != null) {
+                effects = result;
+                ArrayList<String> effectNames = new ArrayList<>();
+                for (Effect effect : effects) {
+                    effectNames.add(effect.getEffectName());
+                }
+
+                int[] flowerImages = {R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground};
+                GridAdapter gridAdapter = new GridAdapter(MainActivity.this, effectNames, flowerImages);
+
+                binding.gridView.setAdapter(gridAdapter);
+                binding.gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                        JSONObject jsonObject = new JSONObject();
+                        try {
+                            jsonObject.put("effect", effects.get(i).getEffect());
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        new NetworkTask().execute(jsonObject);
+                        Toast.makeText(MainActivity.this, "You clicked on " + jsonObject.toString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } else {
+                Toast.makeText(MainActivity.this, "Error fetching data", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        new FetchEffectsTask().execute();
+    }
+
+    private ArrayList<Effect> getEffects() throws IOException {
         ArrayList<Effect> list = new ArrayList<>();
 
-        String apiUrl = "http://192.168.0.28:8080/api/example"; // Замените на фактический URL вашего сервера
+        String apiUrl = "http://192.168.0.28:8080/api/example";
         URL url = new URL(apiUrl);
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -83,55 +139,9 @@ public class MainActivity extends AppCompatActivity {
             in.close();
 
             ObjectMapper mapper = new ObjectMapper();
-            list = mapper.readValue(String.valueOf(responseText), new TypeReference<ArrayList<Effect>>() {});
+            list = mapper.readValue(responseText.toString(), new TypeReference<ArrayList<Effect>>() {});
         }
-
 
         return list;
     }
-
-    @SuppressLint("WrongConstant")
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        try {
-            effects = getEffects();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        ArrayList<String> effectName = new ArrayList<>();
-        effects.forEach(e -> {
-           effectName.add(e.getEffectName());
-        });
-
-        int[] flowerImages = {R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground};
-
-        GridAdapter gridAdapter = new GridAdapter(MainActivity.this, effectName, flowerImages);
-
-        binding.gridView.setAdapter(gridAdapter);
-        binding.gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-
-                JSONObject jsonObject = new JSONObject();
-
-                try {
-                    jsonObject.put("effect", effectName.get(i));
-                } catch (JSONException e) {
-                    throw new RuntimeException(e);
-                }
-
-                new NetworkTask().execute(jsonObject);
-
-
-                // Вывод всплывающего сообщения при нажатии на элемент
-                Toast.makeText(MainActivity.this, "You clicked on " + jsonObject.toString(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
 }

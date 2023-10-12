@@ -34,13 +34,13 @@ public class GridAdapter extends BaseAdapter {
     @Override
     public Object getItem(int i) {
         // Возвращает элемент данных по указанной позиции
-        return null;
+        return i;
     }
 
     @Override
     public long getItemId(int i) {
         // Возвращает идентификатор элемента данных по указанной позиции
-        return 0;
+        return i;
     }
 
     @Override
