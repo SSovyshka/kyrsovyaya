@@ -1,7 +1,9 @@
 package com.example.owledcontroller;
 
+import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Toast;
@@ -9,6 +11,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.owledcontroller.databinding.ActivityMainBinding;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -16,17 +20,18 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 
-import org.bson.Document;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.Socket;
+import java.net.URL;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
     private static MongoClient mongoClient;
     private static DB dataBase;
     private static DBCollection dataBaseCollection;
+
+    private ArrayList<Effect> effects;
 
     private class NetworkTask extends AsyncTask<JSONObject, Void, Void> {
         @Override
@@ -55,36 +62,51 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static ArrayList<String> getEffects(){
+    private static ArrayList<Effect> getEffects() throws IOException {
+        ArrayList<Effect> list = new ArrayList<>();
 
-        mongoClient = new MongoClient(new MongoClientURI("mongodb+srv://sovyshka:ujdyfdnhzgjxre@cluster0.rpsi7sd.mongodb.net/?retryWrites=true&w=majority"));
-        dataBase = mongoClient.getDB("leddb");
-        dataBaseCollection = dataBase.getCollection("visualeffects");
+        String apiUrl = "http://192.168.0.28:8080/api/example"; // Замените на фактический URL вашего сервера
+        URL url = new URL(apiUrl);
 
-        BasicDBObject query = new BasicDBObject("effect", new BasicDBObject("$exists", true));
-        DBCursor cursor = dataBaseCollection.find(query);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
 
-        ArrayList<String> effects = new ArrayList<>();
+        int responseCode = connection.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String inputLine;
+            StringBuilder responseText = new StringBuilder();
 
-        // Перебираем результаты запроса.
-        while (cursor.hasNext()) {
-            DBObject document = cursor.next();
-            String effectValue = (String) document.get("effect");
-            effects.add(effectValue);
+            while ((inputLine = in.readLine()) != null) {
+                responseText.append(inputLine);
+            }
+            in.close();
+
+            ObjectMapper mapper = new ObjectMapper();
+            list = mapper.readValue(String.valueOf(responseText), new TypeReference<ArrayList<Effect>>() {});
         }
 
-        cursor.close();
-        mongoClient.close();
-        return effects;
+
+        return list;
     }
 
+    @SuppressLint("WrongConstant")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        ArrayList<String> effectName = getEffects();
+        try {
+            effects = getEffects();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        ArrayList<String> effectName = new ArrayList<>();
+        effects.forEach(e -> {
+           effectName.add(e.getEffectName());
+        });
 
         int[] flowerImages = {R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground};
 
