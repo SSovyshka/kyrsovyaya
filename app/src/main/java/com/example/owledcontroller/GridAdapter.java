@@ -5,21 +5,22 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+
+import pl.droidsonroids.gif.GifImageView;
 
 public class GridAdapter extends BaseAdapter {
 
     Context context;
     ArrayList<String> flowerName;
-    int[] image;
+    ArrayList<Integer> image;
 
     LayoutInflater inflater;
 
     // Конструктор класса GridAdapter
-    public GridAdapter(Context context, ArrayList<String> flowerName, int[] image) {
+    public GridAdapter(Context context, ArrayList<String> flowerName, ArrayList<Integer> image) {
         this.context = context;
         this.flowerName = flowerName;
         this.image = image;
@@ -54,11 +55,11 @@ public class GridAdapter extends BaseAdapter {
             view = inflater.inflate(R.layout.grid_item, null);
 
         // Находим элементы ImageView и TextView в макете grid_item
-        ImageView imageView = view.findViewById(R.id.item_image);
+        GifImageView imageView = view.findViewById(R.id.item_image);
         TextView textView = view.findViewById(R.id.item_text);
 
         // Устанавливаем изображение и текст для текущего элемента
-        imageView.setImageResource(image[i]);
+        imageView.setImageResource(image.get(i));
         textView.setText(flowerName.get(i));
 
         // Возвращаем View, представляющую текущий элемент в GridView

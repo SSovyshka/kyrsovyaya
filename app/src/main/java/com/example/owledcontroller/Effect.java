@@ -32,4 +32,19 @@ public class Effect{
     public String getGif() {
         return gif;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Effect effect = (Effect) o;
+
+        return popularity == effect.popularity;
+    }
+
+    @Override
+    public int hashCode() {
+        return popularity;
+    }
 }

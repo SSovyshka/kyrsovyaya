@@ -1,6 +1,5 @@
 package com.example.owledcontroller;
 
-import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,13 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.owledcontroller.databinding.ActivityMainBinding;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,10 +21,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,8 +44,21 @@ public class MainActivity extends AppCompatActivity {
                 out.println(jsonObjects[0].toString());
                 out.close();
                 socket.close();
+                Log.d("responseCode", jsonObjects[0].toString());
+
+                String apiUrl = "http://192.168.0.23:8080/api/increasepopularity/"+ jsonObjects[0].get("effect");
+                Log.d("responseCode", apiUrl);
+                URL url = new URL(apiUrl);
+
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                Log.d("responseCode", String.valueOf(connection.getResponseCode()));
+
+
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
             }
             return null;
         }
@@ -69,25 +75,52 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public ArrayList<String> getEffectFunction() {
-            ArrayList<String> images = new ArrayList<>();
+        private ArrayList<Integer> getEffectImages() {
+            ArrayList<Integer> images = new ArrayList<>();
             effects.forEach(e -> {
-                images.add(e.getGif());
+                int data = getResources().getIdentifier(e.getGif(), "drawable", getPackageName());
+                if(data != 0)
+                    images.add(data);
+                else
+                    images.add(R.drawable.ic_launcher_background);
+                Log.d("imgs",e.getGif());
             });
             return images;
         }
+
+        private ArrayList<String> getEffectNames(){
+            ArrayList<String> names = new ArrayList<>();
+            effects.forEach(e ->{
+                names.add(e.getEffectName());
+            });
+            return names;
+        }
+
+        private void sortArrayByPopularity(){
+            Comparator<Effect> comparatorByPopularity = (ef1, ef2) ->{
+              if (ef1.getPopularity() == ef2.getPopularity()){
+                  return 0;
+              }else if(ef1.getPopularity() > ef2.getPopularity()){
+                  return -1;
+              }else {
+                  return 0;
+              }
+            };
+
+            effects.sort(comparatorByPopularity);
+        }
+
 
         @Override
         protected void onPostExecute(ArrayList<Effect> result) {
             if (result != null) {
                 effects = result;
-                ArrayList<String> effectNames = new ArrayList<>();
-                for (Effect effect : effects) {
-                    effectNames.add(effect.getEffectName());
-                }
+                sortArrayByPopularity();
 
-                int[] flowerImages = {R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground, R.drawable.ic_launcher_foreground};
-                GridAdapter gridAdapter = new GridAdapter(MainActivity.this, effectNames, flowerImages);
+                ArrayList<String> effectNames = getEffectNames();
+                ArrayList<Integer> effectImages = getEffectImages();
+
+                GridAdapter gridAdapter = new GridAdapter(MainActivity.this, effectNames, effectImages);
 
                 binding.gridView.setAdapter(gridAdapter);
                 binding.gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -121,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Effect> getEffects() throws IOException {
         ArrayList<Effect> list = new ArrayList<>();
 
-        String apiUrl = "http://192.168.0.28:8080/api/example";
+        String apiUrl = "http://192.168.0.23:8080/api/getalleffects";
         URL url = new URL(apiUrl);
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
