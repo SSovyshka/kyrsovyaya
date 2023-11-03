@@ -30,7 +30,7 @@ import java.util.Comparator;
 public class MainActivity extends AppCompatActivity {
 
     ActivityMainBinding binding;
-    private static final String SERVER_IP = "192.168.0.78";
+    private static final String SERVER_IP = "192.168.167.253";
     private static final int SERVER_PORT = 61024;
 
     private ArrayList<Effect> effects;
@@ -46,11 +46,12 @@ public class MainActivity extends AppCompatActivity {
                 socket.close();
                 Log.d("responseCode", jsonObjects[0].toString());
 
-                String apiUrl = "http://192.168.0.23:8080/api/increasepopularity/"+ jsonObjects[0].get("effect");
+                String apiUrl = "http://192.168.167.1:8080/api/increasepopularity/"+ jsonObjects[0].get("effect");
                 Log.d("responseCode", apiUrl);
                 URL url = new URL(apiUrl);
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
                 connection.setRequestMethod("GET");
                 Log.d("responseCode", String.valueOf(connection.getResponseCode()));
 
@@ -154,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Effect> getEffects() throws IOException {
         ArrayList<Effect> list = new ArrayList<>();
 
-        String apiUrl = "http://192.168.0.23:8080/api/getalleffects";
+        String apiUrl = "http://192.168.167.1:8080/api/getalleffects";
         URL url = new URL(apiUrl);
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
